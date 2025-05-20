@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AIM Trainer with Settings</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: white;
+    }
+
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: #1e1e1e;
+      overflow: hidden;
+      cursor: crosshair;
+      transition: background 0.3s ease;
+    }
+
+    .target {
+      width: 50px;
+      height: 50px;
+      background: red;
+      border-radius: 50%;
+      position: absolute;
+      transition: 0.2s ease;
+    }
+
+    #stats {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 16px;
+      z-index: 10;
+    }
+
+    #startButton {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 12px 24px;
+      font-size: 20px;
+      cursor: pointer;
+      background: #28a745;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      z-index: 10;
+    }
+
+    #settingsButton {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #007bff;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      z-index: 10;
+    }
+
+    #settingsPanel {
+      position: absolute;
+      top: 50px;
+      right: 10px;
+      background: #222;
+      padding: 15px;
+      border-radius: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 11;
+    }
+
+    #settingsPanel label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    #settingsPanel select,
+    #settingsPanel input[type="color"] {
+      padding: 5px;
+      font-size: 14px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div id="stats">
+      Hits: <span id="hits">0</span> |
+      Misses: <span id="misses">0</span> |
+      Accuracy: <span id="accuracy">100%</span>
+    </div>
+
+    <button id="startButton">Start AIM Trainer</button>
+    <button id="settingsButton">⚙ Settings</button>
+
+    <div id="settingsPanel">
+      <div>
+        <label for="targetCountSelect">Targets per round:</label>
+        <select id="targetCountSelect">
+          <option value="1">1</option>
+          <option value="2" selected>2</option>
+          <option value="3">3</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+        </select>
+      </div>
+      <div>
+        <label for="bgColorPicker">Background color:</label>
+        <input type="color" id="bgColorPicker" value="#1e1e1e" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const game = document.getElementById('game');
+    const hitsEl = document.getElementById('hits');
+    const missesEl = document.getElementById('misses');
+    const accuracyEl = document.getElementById('accuracy');
+    const startButton = document.getElementById('startButton');
+    const settingsButton = document.getElementById('settingsButton');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const targetCountSelect = document.getElementById('targetCountSelect');
+    const bgColorPicker = document.getElementById('bgColorPicker');
+
+    let hits = 0;
+    let misses = 0;
+    let targetCount = parseInt(targetCountSelect.value);
+    let targets = [];
+
+    function randomPosition() {
+      const x = Math.random() * (window.innerWidth - 50);
+      const y = Math.random() * (window.innerHeight - 50);
+      return { x, y };
+    }
+
+    function createTargets() {
+      clearTargets();
+      targets = [];
+
+      for (let i = 0; i < targetCount; i++) {
+        const target = document.createElement('div');
+        target.classList.add('target');
+
+        const { x, y } = randomPosition();
+        target.style.left = `${x}px`;
+        target.style.top = `${y}px`;
+
+        target.addEventListener('click', (e) => {
+          e.stopPropagation();
+          hits++;
+          updateStats();
+
+          // Move this specific target to a new random position
+          const { x: newX, y: newY } = randomPosition();
+          target.style.left = `${newX}px`;
+          target.style.top = `${newY}px`;
+        });
+
+        game.appendChild(target);
+        targets.push(target);
+      }
+    }
+
+    function clearTargets() {
+      document.querySelectorAll('.target').forEach(t => t.remove());
+    }
+
+    function updateStats() {
+      const total = hits + misses;
+      const accuracy = total === 0 ? 100 : ((hits / total) * 100).toFixed(1);
+      hitsEl.textContent = hits;
+      missesEl.textContent = misses;
+      accuracyEl.textContent = `${accuracy}%`;
+    }
+
+    function startGame() {
+      hits = 0;
+      misses = 0;
+      updateStats();
+      startButton.style.display = 'none';
+      targetCount = parseInt(targetCountSelect.value);
+      createTargets();
+
+      setTimeout(() => {
+        game.addEventListener('click', handleMiss);
+      }, 100);
+    }
+
+    function handleMiss(e) {
+      if (!e.target.classList.contains('target')) {
+        misses++;
+        updateStats();
+      }
+    }
+
+    targetCountSelect.addEventListener('change', () => {
+      targetCount = parseInt(targetCountSelect.value);
+    });
+
+    bgColorPicker.addEventListener('input', () => {
+      game.style.background = bgColorPicker.value;
+    });
+
+    startButton.addEventListener('click', startGame);
+
+    settingsButton.addEventListener('click', () => {
+      settingsPanel.style.display = settingsPanel.style.display === 'flex' ? 'none' : 'flex';
+    });
+  </script>
+</body>
+</html>
