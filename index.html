@@ -4,12 +4,18 @@
   <meta charset="UTF-8">
   <title>sealaim</title>
   <style>
+    * {
+        cursor: crosshair !important;
+        user-select: none;
+    }
+
     body {
       margin: 0;
       overflow: hidden;
       font-family: Arial, sans-serif;
       background: #121212;
       color: white;
+      cursor: crosshair !important;
     }
 
     #game {
@@ -18,7 +24,7 @@
       height: 100vh;
       background: #1e1e1e;
       overflow: hidden;
-      cursor: crosshair;
+      cursor: crosshair !important;
       transition: background 0.3s ease;
     }
 
@@ -29,6 +35,7 @@
       border-radius: 50%;
       position: absolute;
       transition: 0.2s ease;
+      cursor: crosshair !important;
     }
 
     #stats {
@@ -37,6 +44,7 @@
       left: 10px;
       font-size: 16px;
       z-index: 10;
+      cursor: crosshair !important;
     }
 
     #startButton {
@@ -82,6 +90,22 @@
       z-index: 10;
     }
 
+    #exitButton {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #dc3545;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      z-index: 10;
+      cursor: crosshair !important;
+      display: none; /* Hidden by default */
+    }
+
     #settingsPanel {
       position: absolute;
       top: 50px;
@@ -94,11 +118,13 @@
       gap: 10px;
       z-index: 11;
       width: 180px;
+      cursor: crosshair !important;
     }
 
     #settingsPanel label {
       display: block;
       margin-bottom: 5px;
+      cursor: crosshair !important;
     }
 
     #settingsPanel select,
@@ -106,7 +132,9 @@
       padding: 5px;
       font-size: 14px;
       width: 100%;
+      cursor: crosshair !important;
     }
+
   </style>
 </head>
 <body>
@@ -120,6 +148,7 @@
     <button id="startButton">Start AIM Trainer</button>
     <button id="settingsButton">⚙ Settings</button>
     <button id="fullscreenButton">⛶ Fullscreen</button>
+    <button id="exitButton">Exit Game</button>
 
     <div id="settingsPanel">
       <div>
@@ -144,7 +173,7 @@
     </div>
   </div>
 
-  <audio id="hitSound" src="sounds/hit.mp3" preload="auto"></audio>
+  <audio id="hitSound" src="hit.mp3" preload="auto"></audio>
 
   <script>
     // Game variables
@@ -152,6 +181,7 @@
     let hits = 0;
     let misses = 0;
     let targets = [];
+    let gameActive = false;
 
     // Default settings
     const defaultSettings = {
@@ -174,6 +204,8 @@
       misses: document.getElementById("misses"),
       accuracy: document.getElementById("accuracy"),
     };
+    const exitButton = document.getElementById("exitButton");
+    const fullscreenButton = document.getElementById("fullscreenButton");
 
     // Update stats
     function updateStats() {
@@ -234,8 +266,25 @@
       misses = 0;
       updateStats();
       startButton.style.display = 'none'; // Hide the start button when the game starts
+      exitButton.style.display = 'inline-block'; // Show the exit button when the game starts
+      settingsButton.style.display = 'none'; // Hide the settings button in-game
+      fullscreenButton.style.display = 'none'; // Hide the fullscreen button in-game
+      gameActive = true;
       targetCount = parseInt(targetCountSelect.value); // Get the number of targets from the dropdown
       createTargets(); // Create the targets
+    }
+
+    // Exit the game
+    function exitGame() {
+      clearTargets(); // Clear all targets
+      hits = 0;
+      misses = 0;
+      updateStats(); // Reset stats
+      exitButton.style.display = 'none'; // Hide the exit button
+      startButton.style.display = 'block'; // Show the start button again
+      settingsButton.style.display = 'inline-block'; // Show the settings button
+      fullscreenButton.style.display = 'inline-block'; // Show the fullscreen button
+      gameActive = false;
     }
 
     // Reset settings to defaults
@@ -250,7 +299,7 @@
       circleColorPicker.value = defaultSettings.targetColor;
 
       // If game is active, clear and create new targets with default settings
-      if (startButton.style.display === 'none') {
+      if (gameActive) {
         clearTargets();
         createTargets();
       }
@@ -258,13 +307,14 @@
 
     // Event listeners
     startButton.addEventListener('click', startGame);
+    exitButton.addEventListener('click', exitGame);
     settingsButton.addEventListener('click', () => {
       settingsPanel.style.display = settingsPanel.style.display === 'none' ? 'flex' : 'none';
     });
 
     targetCountSelect.addEventListener('change', () => {
       targetCount = parseInt(targetCountSelect.value);
-      if (startButton.style.display === 'none') {
+      if (gameActive) {
         clearTargets();
         createTargets();
       }
@@ -279,7 +329,7 @@
     document.getElementById("resetButton").addEventListener('click', resetSettings);
 
     // Fullscreen button
-    document.getElementById("fullscreenButton").addEventListener("click", () => {
+    fullscreenButton.addEventListener("click", () => {
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen();
       } else if (document.documentElement.mozRequestFullScreen) {
@@ -293,6 +343,7 @@
 
     // Initial setup
     startButton.style.display = 'block';
+
   </script>
 </body>
 </html>
