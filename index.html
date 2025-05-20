@@ -305,6 +305,17 @@
       }
     }
 
+// Detect misses (clicks directly on the game background)
+game.addEventListener('click', (e) => {
+  // Only count as a miss if the game is active, and the click target is the game container itself
+  if (e.target === game && gameActive) {
+    misses++;
+    updateStats();
+  }
+});
+
+
+
     // Event listeners
     startButton.addEventListener('click', startGame);
     exitButton.addEventListener('click', exitGame);
@@ -343,7 +354,6 @@
 
     // Initial setup
     startButton.style.display = 'block';
-
   </script>
 </body>
 </html>
