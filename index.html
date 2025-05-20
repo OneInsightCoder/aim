@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AIM Trainer with Settings</title>
+  <title>sealaim</title>
   <style>
     body {
       margin: 0;
@@ -68,6 +68,20 @@
       z-index: 10;
     }
 
+    #fullscreenButton {
+      position: absolute;
+      top: 10px;
+      right: 100px;
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #6c757d;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      z-index: 10;
+    }
+
     #settingsPanel {
       position: absolute;
       top: 50px;
@@ -79,6 +93,7 @@
       flex-direction: column;
       gap: 10px;
       z-index: 11;
+      width: 180px;
     }
 
     #settingsPanel label {
@@ -104,6 +119,7 @@
 
     <button id="startButton">Start AIM Trainer</button>
     <button id="settingsButton">⚙ Settings</button>
+    <button id="fullscreenButton">⛶ Fullscreen</button>
 
     <div id="settingsPanel">
       <div>
@@ -120,104 +136,163 @@
         <label for="bgColorPicker">Background color:</label>
         <input type="color" id="bgColorPicker" value="#1e1e1e" />
       </div>
+      <div>
+        <label for="circleColorPicker">Target color:</label>
+        <input type="color" id="circleColorPicker" value="#ff0000" />
+      </div>
+      <button id="resetButton">🔄 Reset Settings</button>
     </div>
   </div>
 
-  <script>
-    const game = document.getElementById('game');
-    const hitsEl = document.getElementById('hits');
-    const missesEl = document.getElementById('misses');
-    const accuracyEl = document.getElementById('accuracy');
-    const startButton = document.getElementById('startButton');
-    const settingsButton = document.getElementById('settingsButton');
-    const settingsPanel = document.getElementById('settingsPanel');
-    const targetCountSelect = document.getElementById('targetCountSelect');
-    const bgColorPicker = document.getElementById('bgColorPicker');
+  <audio id="hitSound" src="hit.mp3" preload="auto"></audio>
 
+  <script>
+    // Game variables
+    let targetCount = 2; // Default number of targets
     let hits = 0;
     let misses = 0;
-    let targetCount = parseInt(targetCountSelect.value);
     let targets = [];
 
+    // Default settings
+    const defaultSettings = {
+      targetCount: 2,
+      bgColor: "#1e1e1e",
+      targetColor: "#ff0000"
+    };
+
+    // Game elements
+    const game = document.getElementById("game");
+    const startButton = document.getElementById("startButton");
+    const settingsButton = document.getElementById("settingsButton");
+    const settingsPanel = document.getElementById("settingsPanel");
+    const targetCountSelect = document.getElementById("targetCountSelect");
+    const circleColorPicker = document.getElementById("circleColorPicker");
+    const bgColorPicker = document.getElementById("bgColorPicker");
+    const hitSound = document.getElementById("hitSound");
+    const stats = {
+      hits: document.getElementById("hits"),
+      misses: document.getElementById("misses"),
+      accuracy: document.getElementById("accuracy"),
+    };
+
+    // Update stats
+    function updateStats() {
+      const total = hits + misses;
+      const accuracy = total === 0 ? 100 : ((hits / total) * 100).toFixed(1);
+      stats.hits.textContent = hits;
+      stats.misses.textContent = misses;
+      stats.accuracy.textContent = `${accuracy}%`;
+    }
+
+    // Create a random position for a target
     function randomPosition() {
-      const x = Math.random() * (window.innerWidth - 50);
-      const y = Math.random() * (window.innerHeight - 50);
+      const x = Math.random() * (window.innerWidth - 50); // 50 is the target's width
+      const y = Math.random() * (window.innerHeight - 50); // 50 is the target's height
       return { x, y };
     }
 
+    // Create the targets
     function createTargets() {
-      clearTargets();
-      targets = [];
-
+      targets = []; // Reset the targets array
       for (let i = 0; i < targetCount; i++) {
         const target = document.createElement('div');
         target.classList.add('target');
+        target.style.background = circleColorPicker.value; // Apply the target color
 
+        // Position target randomly
         const { x, y } = randomPosition();
         target.style.left = `${x}px`;
         target.style.top = `${y}px`;
 
-        target.addEventListener('click', (e) => {
-          e.stopPropagation();
-          hits++;
-          updateStats();
+        // Target click event
+        target.addEventListener('click', () => {
+          hits++;  // Increment hits
+          updateStats();  // Update stats
+          hitSound.play();  // Play hit sound
 
-          // Move this specific target to a new random position
+          // Move the target to a new position
           const { x: newX, y: newY } = randomPosition();
           target.style.left = `${newX}px`;
           target.style.top = `${newY}px`;
         });
 
+        // Add the target to the game
         game.appendChild(target);
         targets.push(target);
       }
     }
 
+    // Clear all targets from the game
     function clearTargets() {
-      document.querySelectorAll('.target').forEach(t => t.remove());
+      targets.forEach(target => target.remove());
+      targets = [];  // Clear the targets array
     }
 
-    function updateStats() {
-      const total = hits + misses;
-      const accuracy = total === 0 ? 100 : ((hits / total) * 100).toFixed(1);
-      hitsEl.textContent = hits;
-      missesEl.textContent = misses;
-      accuracyEl.textContent = `${accuracy}%`;
-    }
-
+    // Start the game
     function startGame() {
       hits = 0;
       misses = 0;
       updateStats();
-      startButton.style.display = 'none';
-      targetCount = parseInt(targetCountSelect.value);
-      createTargets();
-
-      setTimeout(() => {
-        game.addEventListener('click', handleMiss);
-      }, 100);
+      startButton.style.display = 'none'; // Hide the start button when the game starts
+      targetCount = parseInt(targetCountSelect.value); // Get the number of targets from the dropdown
+      createTargets(); // Create the targets
     }
 
-    function handleMiss(e) {
-      if (!e.target.classList.contains('target')) {
-        misses++;
-        updateStats();
+    // Reset settings to defaults
+    function resetSettings() {
+      targetCount = defaultSettings.targetCount;
+      game.style.backgroundColor = defaultSettings.bgColor;
+      circleColorPicker.value = defaultSettings.targetColor;
+      targetCountSelect.value = defaultSettings.targetCount;
+
+      // Reset color pickers to default values
+      bgColorPicker.value = defaultSettings.bgColor;
+      circleColorPicker.value = defaultSettings.targetColor;
+
+      // If game is active, clear and create new targets with default settings
+      if (startButton.style.display === 'none') {
+        clearTargets();
+        createTargets();
       }
     }
 
+    // Event listeners
+    startButton.addEventListener('click', startGame);
+    settingsButton.addEventListener('click', () => {
+      settingsPanel.style.display = settingsPanel.style.display === 'none' ? 'flex' : 'none';
+    });
+
     targetCountSelect.addEventListener('change', () => {
       targetCount = parseInt(targetCountSelect.value);
+      if (startButton.style.display === 'none') {
+        clearTargets();
+        createTargets();
+      }
     });
 
+    // Background color change event
     bgColorPicker.addEventListener('input', () => {
-      game.style.background = bgColorPicker.value;
+      game.style.backgroundColor = bgColorPicker.value;
     });
 
-    startButton.addEventListener('click', startGame);
+    // Reset settings event
+    document.getElementById("resetButton").addEventListener('click', resetSettings);
 
-    settingsButton.addEventListener('click', () => {
-      settingsPanel.style.display = settingsPanel.style.display === 'flex' ? 'none' : 'flex';
+    // Fullscreen button
+    document.getElementById("fullscreenButton").addEventListener("click", () => {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      } else if (document.documentElement.mozRequestFullScreen) {
+        document.documentElement.mozRequestFullScreen();
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen();
+      } else if (document.documentElement.msRequestFullscreen) {
+        document.documentElement.msRequestFullscreen();
+      }
     });
+
+    // Initial setup
+    startButton.style.display = 'block';
   </script>
 </body>
 </html>
